@@ -1,5 +1,5 @@
 #!/bin/bash
-# VERSION 0.2 by d3vilh@github.com aka Mr. Philipp.
+# VERSION 0.4 by damian@bytefarm.ch
 #
 
 # All the variables
