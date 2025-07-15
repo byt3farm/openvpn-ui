@@ -74,7 +74,7 @@ then
       exit 1
     fi
   fi
-se
+else
   echo "Go version $go_version found: $(which go)"
 fi
 
