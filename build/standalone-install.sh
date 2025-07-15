@@ -36,32 +36,32 @@ then
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
         # Install Go
-	
-		arch=$(uname -m)
-		case "$arch" in
-		  x86_64)
-			goarch="amd64"
-			;;
-		  aarch64 | arm64)
-			goarch="arm64"
-			;;
-		  armv6l | armv7l)
-			goarch="armv6l"  # Note: Go provides only armv6l binary which works for armv7 too
-			;;
-		  *)
-			echo "Unsupported architecture: $arch"
-			exit 1
-			;;
-		esac
+  
+    arch=$(uname -m)
+    case "$arch" in
+      x86_64)
+      goarch="amd64"
+      ;;
+      aarch64 | arm64)
+      goarch="arm64"
+      ;;
+      armv6l | armv7l)
+      goarch="armv6l"  # Note: Go provides only armv6l binary which works for armv7 too
+      ;;
+      *)
+      echo "Unsupported architecture: $arch"
+      exit 1
+      ;;
+    esac
 
-		gofile="go${GOVERSION}.linux-${goarch}.tar.gz"
-		gourl="https://go.dev/dl/${gofile}"
+    gofile="go${GOVERSION}.linux-${goarch}.tar.gz"
+    gourl="https://go.dev/dl/${gofile}"
 
-		echo "Detected architecture: $arch → downloading $gourl"
+    echo "Detected architecture: $arch → downloading $gourl"
 
-		wget -q --show-progress "$gourl" || { echo "Failed to download $gofile"; exit 1; }
-		sudo tar -C /usr/local -xzf "$gofile"
-		rm "$gofile"
+    wget -q --show-progress "$gourl" || { echo "Failed to download $gofile"; exit 1; }
+    sudo tar -C /usr/local -xzf "$gofile"
+    rm "$gofile"
 
         export PATH=$PATH:/usr/local/go/bin
         echo "export PATH=$PATH:$(go env GOPATH)/bin" >> ~/.bashrc
@@ -76,7 +76,7 @@ then
         fi
     fi
 else
-	echo "Go version $go_version found: $(which go)"
+  echo "Go version $go_version found: $(which go)"
 fi
 
 # Update your system
@@ -126,13 +126,13 @@ then
     # Install OpenVPN-UI and qrencode
     echo "Installing OpenVPN-UI and qrencode"
     source ~/.bashrc # reload bashrc to get bee command
-	
-	if [ -d "qrencode" ]; then
-		echo "Directory 'qrencode' already exists. Skipping git clone."
-	else
-		echo "Cloning qrencode into build directory"
-		git clone https://github.com/d3vilh/qrencode
-	fi
+  
+  if [ -d "qrencode" ]; then
+    echo "Directory 'qrencode' already exists. Skipping git clone."
+  else
+    echo "Cloning qrencode into build directory"
+    git clone https://github.com/d3vilh/qrencode
+  fi
 
     # Set environment variables
     export GO111MODULE='auto'
@@ -140,8 +140,8 @@ then
     export CC=musl-gcc 
 
     # Packing openvpn-ui
-	CURPATH=$(pwd)
-	cd ../
+  CURPATH=$(pwd)
+  cd ../
     echo "Building and packing OpenVPN-UI"
     # Execute bee pack
     export PATH=$PATH:$(go env GOPATH)/bin
