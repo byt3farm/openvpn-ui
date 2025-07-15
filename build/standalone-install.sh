@@ -1,9 +1,9 @@
 #!/bin/bash
-# VERSION 0.3 by d3vilh@github.com aka Mr. Philipp.
+# VERSION 0.2 by d3vilh@github.com aka Mr. Philipp.
 #
 
 # All the variables
-GOVERSION="1.22.3"
+GOVERSION="1.21.5"
 
 # Description
 echo "This script will install OpenVPN-UI and all the dependencies on your local environment. No containers will be used."
@@ -15,6 +15,17 @@ then
     exit 1
 fi
 
+# Prevent running as root or via sudo (because go might not be found in PATH when done so)
+if [ "$EUID" -eq 0 ]; then
+  echo "Warning: You are not running this script with sudo/root. Some steps may fail."
+  read -p "Do you want to continue anyway? (y/n): " -n 1 -r
+  echo
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Exiting to avoid running as root."
+    exit 1
+  fi
+fi
+
 # Check if Go is installed and the version is supported
 go_version=$(go version 2>/dev/null | awk '{print $3}' | tr -d "go")
 if [[ -z "$go_version" || "$go_version" < $GOVERSION ]]
@@ -24,28 +35,34 @@ then
     echo    # move to a new line
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
-        # Check the architecture of the machine
-        arch=$(uname -m)
-        if [[ "$arch" == "x86_64" ]]; then
-            # Install Go for x86_64
-            wget https://golang.org/dl/go${GOVERSION}.linux-amd64.tar.gz
-            sudo tar -C /usr/local -xzf go${GOVERSION}.linux-amd64.tar.gz
-        elif [[ "$arch" == "aarch64" ]]; then
-            # Install Go for arm64
-            wget https://golang.org/dl/go${GOVERSION}.linux-arm64.tar.gz
-            sudo tar -C /usr/local -xzf go${GOVERSION}.linux-arm64.tar.gz
-        elif [[ "$arch" == "armv7l" ]]; then
-            # Install Go for armv7l
-            wget https://golang.org/dl/go${GOVERSION}.linux-armv7l.tar.gz
-            sudo tar -C /usr/local -xzf go${GOVERSION}.linux-armv7l.tar.gz
-        elif [[ "$arch" == "armv6l" ]]; then
-            # Install Go for armv6l
-            wget https://golang.org/dl/go${GOVERSION}.linux-armv6l.tar.gz
-            sudo tar -C /usr/local -xzf go${GOVERSION}.linux-armv6l.tar.gz
-        else
-            echo "Unsupported architecture."
-            exit 1
-        fi
+        # Install Go
+	
+		arch=$(uname -m)
+		case "$arch" in
+		  x86_64)
+			goarch="amd64"
+			;;
+		  aarch64 | arm64)
+			goarch="arm64"
+			;;
+		  armv6l | armv7l)
+			goarch="armv6l"  # Note: Go provides only armv6l binary which works for armv7 too
+			;;
+		  *)
+			echo "Unsupported architecture: $arch"
+			exit 1
+			;;
+		esac
+
+		gofile="go${GOVERSION}.linux-${goarch}.tar.gz"
+		gourl="https://go.dev/dl/${gofile}"
+
+		echo "Detected architecture: $arch → downloading $gourl"
+
+		wget -q --show-progress "$gourl" || { echo "Failed to download $gofile"; exit 1; }
+		sudo tar -C /usr/local -xzf "$gofile"
+		rm "$gofile"
+
         export PATH=$PATH:/usr/local/go/bin
         echo "export PATH=$PATH:$(go env GOPATH)/bin" >> ~/.bashrc
         source ~/.bashrc
@@ -58,6 +75,8 @@ then
             exit 1
         fi
     fi
+else
+	echo "Go version $go_version found: $(which go)"
 fi
 
 # Update your system
@@ -107,8 +126,13 @@ then
     # Install OpenVPN-UI and qrencode
     echo "Installing OpenVPN-UI and qrencode"
     source ~/.bashrc # reload bashrc to get bee command
-    echo "Cloning qrencode into build directory"
-    git clone https://github.com/d3vilh/qrencode
+	
+	if [ -d "qrencode" ]; then
+		echo "Directory 'qrencode' already exists. Skipping git clone."
+	else
+		echo "Cloning qrencode into build directory"
+		git clone https://github.com/d3vilh/qrencode
+	fi
 
     # Set environment variables
     export GO111MODULE='auto'
@@ -116,7 +140,8 @@ then
     export CC=musl-gcc 
 
     # Packing openvpn-ui
-    cd ../
+	CURPATH=$(pwd)
+	cd ../
     echo "Building and packing OpenVPN-UI"
     # Execute bee pack
     export PATH=$PATH:$(go env GOPATH)/bin
@@ -131,8 +156,8 @@ then
     go build -o qrencode main.go
     chmod +x qrencode
     echo "Moving qrencode to GOPATH"
-    mv qrencode $(go env GOPATH)/bin
-    cd ../
+    mv -v qrencode $(go env GOPATH)/bin
+    cd $CURPATH
 fi
 
 printf "\033[1;34mAll done.\033[0m\n"
