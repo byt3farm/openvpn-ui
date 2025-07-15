@@ -39,17 +39,17 @@ then
     arch=$(uname -m) # detect current target system's architecture
     case "$arch" in
       x86_64)
-      goarch="amd64"
-      ;;
+        goarch="amd64"
+        ;;
       aarch64 | arm64)
-      goarch="arm64"
-      ;;
+        goarch="arm64"
+        ;;
       armv6l | armv7l)
-      goarch="armv6l"  # Note: Go provides only armv6l binary which works for armv7 too
-      ;;
+        goarch="armv6l"  # Note: Go provides only armv6l binary which works for armv7 too
+        ;;
       *)
-      echo "Unsupported architecture: $arch"
-      exit 1
+        echo "Unsupported architecture: $arch"
+        exit 1
       ;;
     esac
   
